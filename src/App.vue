@@ -1,5 +1,5 @@
 <script setup>
-  import {ref} from "vue";
+  import {ref, onMounted, watch} from "vue";
 
   const showModal = ref(false)
   const newNote = ref("") 
@@ -18,7 +18,7 @@
     return errorMessage.value = "Note must have more than 10 characters";
   }
 
-  notes.value.push({
+  notes.value.push({ 
     id: Math.floor(Math.random() * 1000000),
     text: newNote.value,
     date: new Date(),
@@ -30,17 +30,24 @@
   customColor.value = ""; // Reset barvy po přidání
   errorMessage.value = "";
 };
+// Načtení poznámek při startu
+  onMounted(() => {
+    const savedNotes = localStorage.getItem("notes");
+    if (savedNotes) {
+      notes.value = JSON.parse(savedNotes).map(note => ({
+        ...note,
+        date: new Date(note.date), // Převede datum z JSONu na Date objekt
+      }));
+    }
+  });
+// Uložení poznámek do localStorage při změně
+  watch(notes, (newNotes) => { 
+    localStorage.setItem("notes", JSON.stringify(newNotes));
+  }, { deep: true }); // deep = sleduje změny v objektech uvnitř pole 
 
-  // Pro testování, aby se poznámky zobrazily i bez přidání
-  //notes.value = [
-  //  { id: 1, text: "Test note 1", date: new Date(), backgroundColor: getRandonColor() },
-  //  { id: 2, text: "Test note 2", date: new Date(), backgroundColor: getRandonColor() },
-  //;
-  
-    
-    
 </script>
 
+<!-- NEDOKONČENÝ KÓD, PŘÍKLAD PRO ZÍSKÁNÍ DAT Z API (DJANGO DB)
 <script>
 import axios from 'axios';
 
@@ -65,9 +72,7 @@ export default {
   },
 };
 </script>
-
-<!-- String = "" Pole = [] -->
-
+-->
 <template>
   <main>
     <div v-if="showModal" class="overlay"> <!-- v-if schová kod pokud neni na hodnotě true. Alternativa v-show, kod jde vidět v pruzkumu -->
@@ -106,12 +111,14 @@ export default {
     </div>
 
     <div>
+  <!-- 
     <h1>Item List</h1>
     <ul>
       <li v-for="item in items" :key="item.id">
         {{ item.name }}: {{ item.description }}
       </li>
     </ul>
+  -->
   </div>
 
   </main>
