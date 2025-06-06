@@ -132,6 +132,10 @@ export default {
     width: 100vw;
     color: black;
   }
+  .main-text {
+  max-height: 130px;
+  overflow-y: auto;
+}
   .container {
     max-width: 1000px;
     padding: 10px;
@@ -169,6 +173,8 @@ export default {
     justify-content: space-between;
     margin-right: 20px;
     margin-bottom: 20px;
+    overflow: hidden; /* Skryje přetečení textu */
+    word-wrap: break-word; /* Zlomí slova, pokud jsou příliš dlouhá */
   }
   .date {
     font-size: 12.5px;
