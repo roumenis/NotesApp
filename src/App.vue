@@ -1,31 +1,50 @@
 <script setup>
-  import {ref, onMounted, watch} from "vue";
+  import {ref, onMounted, watch, computed} from "vue";
 
   const showModal = ref(false)
-  const newNote = ref("") 
+  const newNote = ref("")
+  const newTitle = ref("") 
   const notes = ref([])
   const errorMessage = ref("")
   const deleteNote = (id) => {
     notes.value = notes.value.filter(note => note.id !== id); /* Smaže poznámku podle ID */
   }
+
   const customColor = ref(""); /* Prázdná = použije se generátor */
   function getRandonColor() { /* Stackoverflow funkce, přidava ke kartam random světlé barvy */
     return "hsl(" + Math.random() * 360 + ", 100%, 75%)";
   }
 
+  const togglePin = (noteId) => {
+    const note = notes.value.find(n => n.id ===noteId);
+    if(note) {
+      note.pinned = !note.pinned; // Přepne stav připnutí
+      saveNotesToLocalStorage(); // Uloží změny do localStorage
+    }
+  }
+
+  const sortedNotes = computed(() => { 
+    return [...notes.value].sort((a, b) => { 
+      if(a.pinned === b.pinned) return 0; // Pokud jsou obě poznámky připnuté nebo nepřipnuté, neprovádí se žádné změny.
+      return a.pinned  ? -1 : 1; // Připnuté poznámky budou na začátku
+    })
+  })
+
   const addNote = () => {
   if (newNote.value.length < 9) { // Kontrola délky poznámky
     return errorMessage.value = "Note must have more than 10 characters";
-  }
-
-  notes.value.push({ 
+  };
+notes.value.push({ 
     id: Math.floor(Math.random() * 1000000),
+    title: newTitle.value,
     text: newNote.value,
     date: new Date(),
+    pinned: false,
     backgroundColor: customColor.value || getRandonColor(), // Vlastní nebo generovaná barva
   });
 
   showModal.value = false;
+  newTitle.value = ""; 
   newNote.value = "";
   customColor.value = ""; // Reset barvy po přidání
   errorMessage.value = "";
@@ -79,10 +98,15 @@ export default {
       <div class="modal">
         
         <label>
-          Vyber barvu (nebo ponech prázdné pro náhodnou):
+          Vyber barvu (nebo ponech prázdné = vygeneruje samo):
           <input type="color" v-model="customColor" />
         </label>
 
+        <h2>Add a new note :)</h2>
+        <!-- Titulek -->
+        <label for="title">Nadpis poznámky:</label>
+        <input v-model.trim="newTitle" id="title" type="text"/>
+        <!-- Hlavní text -->
         <textarea v-model.trim="newNote" id="note" cols="30" rows="10" >
         </textarea> <!-- "trim" nebude mezeru počítat jako znak. -->
         <p v-if="errorMessage">{{ errorMessage }}</p>
@@ -97,15 +121,18 @@ export default {
       </header>
       <div class="cards-container">
         <div 
-          v-for="note in notes"
+          v-for="note in sortedNotes"
           :key="note.id" 
           class="card" 
+          :class="{ pinned: note.pinned }"
           :style="{backgroundColor: note.backgroundColor}"
-        > <!-- :style = javascript -->
-          
-          <p class="main-text">{{ note.text }}</p>
-          <p class="date">{{ note.date.toLocaleDateString("en-US") }}</p>
-          <button @click="deleteNote(note.id)" class="delete-btn">Smazat</button>
+          >   <!-- :style = javascript -->
+            <h2 class="note-title">{{ note.title }}</h2>
+            <p class="main-text">{{ note.text }}</p>
+            <p class="date">{{ note.date.toLocaleDateString("en-US") }}</p>
+            <button @click="togglePin(note.id)" class="delete-btn">Připnout</button>
+              <!--{{ note.pinned ? "Odebrat" : "Připnout" }} -->   
+            <button @click="deleteNote(note.id)" class="delete-btn">Smazat</button>
         </div>
       </div>
     </div>
@@ -175,6 +202,10 @@ export default {
     margin-bottom: 20px;
     overflow: hidden; /* Skryje přetečení textu */
     word-wrap: break-word; /* Zlomí slova, pokud jsou příliš dlouhá */
+  }
+  .card.pinned {
+    border: 3px solid gold;
+    box-shadow: 0 0 10px gold;;
   }
   .date {
     font-size: 12.5px;
